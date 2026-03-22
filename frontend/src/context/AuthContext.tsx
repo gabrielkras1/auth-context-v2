@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect} from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { api } from "../services/api";
 
 // Tipagem exigida pelo professor
 interface User {
@@ -34,20 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/me", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        localStorage.removeItem("@Prefeitura:token");
-      }
+      const response = await api.get("/me");
+      setUser(response.data);
     } catch (error) {
       console.error("Erro ao validar sessão:", error);
+      // Se der erro aqui (ex: 401 e refresh falhou), o interceptor redirecionará para login
+      localStorage.removeItem("@Prefeitura:token");
     } finally {
-      // O delay de 2s do backend manterá o isLoading=true por esse tempo
       setIsLoading(false);
     }
   }
@@ -57,24 +51,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(username: string, password: string) {
-    const response = await fetch("http://localhost:3000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
+    try {
+      const response = await api.post("/login", { username, password });
+      const { token } = response.data;
 
-    if (!response.ok) throw new Error("Credenciais inválidas");
-
-    const { token } = await response.json();
-    localStorage.setItem("@Prefeitura:token", token);
-    
-    // Busca os dados do usuário logo após o login
-    await validateSession();
+      localStorage.setItem("@Prefeitura:token", token);
+      
+      // Busca os dados do usuário logo após o login
+      await validateSession();
+    } catch (error) {
+      throw new Error("Credenciais inválidas");
+    }
   }
 
-  function signOut() {
-    localStorage.removeItem("@Prefeitura:token");
-    setUser(null);
+  async function signOut() {
+    try {
+      await api.post("/logout");
+    } catch (err) {
+      console.error("Erro ao fazer logout no servidor", err);
+    } finally {
+      localStorage.removeItem("@Prefeitura:token");
+      setUser(null);
+    }
   }
 
   return (

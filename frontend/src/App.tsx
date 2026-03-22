@@ -10,15 +10,16 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route 
-            path="/admin" 
+          <Route
+            path="/admin"
             element={
               <PrivateRoute>
                 <Admin />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route path="*" element={<Navigate to="/admin" />} />
+          {/* Redireciona qualquer outra rota para /admin se autenticado, ou /login se não */}
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

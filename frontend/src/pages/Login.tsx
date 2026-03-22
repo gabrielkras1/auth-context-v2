@@ -3,43 +3,48 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
     try {
       await signIn(username, password);
       navigate("/admin");
-    } catch (err) {
-      setError("Usuário ou senha incorretos.");
+    } catch (err: any) {
+      setError(err.message);
     }
-  }
+  };
 
   return (
-    <div style={{ maxWidth: '300px', margin: '100px auto' }}>
-      <h2>Login Administrativo</h2>
+    <div>
+      <h1>Login</h1>
       <form onSubmit={handleLogin}>
-        <input 
-          placeholder="Usuário" 
-          value={username} 
-          onChange={e => setUsername(e.target.value)} 
-        /><br/>
-        <input 
-          type="password" 
-          placeholder="Senha" 
-          value={password} 
-          onChange={e => setPassword(e.target.value)} 
-        /><br/>
+        <div>
+          <label htmlFor="username">Usuário:</label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="password">Senha:</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
         <button type="submit">Entrar</button>
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 }
